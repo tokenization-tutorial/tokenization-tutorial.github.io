@@ -30,6 +30,10 @@
           <h4 class="mt-5 venue">EMNLP 2026 &middot; October 28 &middot; Budapest, Hungary</h4>
         </div>
       </div>
+      <nav class="tutorial-resources" aria-label="Interactive tutorial">
+        <a class="btn btn-outline-dark" href="playground/">Open the playground</a>
+        <a href="playground/#compare">Compare examples side by side &rarr;</a>
+      </nav>
     </header>
 
     <!-- <div class="row d-flex justify-content-center mt-5"> -->
@@ -95,6 +99,24 @@
 </body>
 
 <style>
+    .tutorial-resources {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+        margin-top: 24px;
+    }
+
+    .tutorial-resources a {
+        font-size: 0.95rem;
+        text-underline-offset: 3px;
+    }
+
+    .tutorial-resources a:not(.btn) {
+        color: #495057;
+    }
+
     .abstract-info {
         text-align: justify;
     }
