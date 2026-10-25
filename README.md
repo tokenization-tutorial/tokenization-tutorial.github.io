@@ -11,12 +11,15 @@ The EMNLP tutorial website is published by GitHub Pages from `main`, using the
 ## Editing the site
 
 The site homepage is `docs/index.html`, the tutorial page is
-`docs/tutorial/index.html`, and shared styles are in `docs/style.css`. The playground is a standalone HTML file at
-`docs/playground/index.html`. Its example data, scripts, styles, and
-architecture animation are embedded, so it needs no build step. Only adding a
-Hugging Face tokenizer requires a network connection; user text stays in the
-browser. The embedded tokenizer runtime's license is also included under
-`docs/playground/licenses/`.
+`docs/tutorial/index.html`, and shared styles are in `docs/style.css`. The playground
+is at
+`docs/playground/index.html`, with its example data, scripts, and styles embedded.
+The architecture view loads the original
+[animation HTML](docs/playground/figures/hierarchical_model_clickthrough.html)
+directly, preserving its diagram, timing, and controls. Both files work locally
+and need no build step. Only adding a Hugging Face tokenizer requires a network
+connection; user text stays in the browser. The embedded tokenizer runtime's license
+is also included under `docs/playground/licenses/`.
 
 The editable demo is maintained in the separate `tokenization-tutorial` checkout.
 From that checkout, run:
@@ -26,7 +29,7 @@ python3 scripts/sync_website.py ../tokenization-tutorial.github.io
 python3 scripts/sync_website.py ../tokenization-tutorial.github.io --check
 ```
 
-Review the changes in this repository, commit the updated playground and license,
-and push to `main`. GitHub Pages publishes the update automatically. To preview
+Review the changes in this repository, commit the updated playground, animation,
+and license, and push to `main`. GitHub Pages publishes the update automatically. To preview
 the entire site locally, run `python3 -m http.server --directory docs` and open
 `http://localhost:8000/tutorial/`.
