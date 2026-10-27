@@ -7,6 +7,7 @@ The EMNLP tutorial website is published by GitHub Pages from `main`, using the
 - [Tutorial page](https://tokenization-tutorial.github.io/tutorial/)
 - [Interactive playground](https://tokenization-tutorial.github.io/playground/)
 - [Compare examples](https://tokenization-tutorial.github.io/playground/#compare)
+- [BPE and Unigram notebook](https://tokenization-tutorial.github.io/bpe-unigram/)
 
 ## Editing the site
 
@@ -33,3 +34,13 @@ Review the changes in this repository, commit the updated playground, animation,
 and license, and push to `main`. GitHub Pages publishes the update automatically. To preview
 the entire site locally, run `python3 -m http.server --directory docs` and open
 `http://localhost:8000/tutorial/`.
+
+## BPE and Unigram notebook
+
+`docs/bpe-unigram/bpe_unigram_tutorial.ipynb` implements BPE and Unigram training in plain
+Python. The page `docs/bpe-unigram/index.html` reads this notebook when it loads and runs
+its code in the visitor's browser with [Pyodide](https://pyodide.org), so there is no build
+step: to change the content, edit the notebook (in Jupyter or Colab) and commit it. Outputs
+saved in the notebook are shown on the page until a cell is run. The page needs an internet
+connection for Pyodide and its other libraries, which are loaded from jsDelivr at pinned
+versions. The same notebook opens in Colab from the link on the page.

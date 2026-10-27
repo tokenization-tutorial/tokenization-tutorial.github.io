@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="robots" content="noindex">
+<title>Training BPE and Unigram Tokenizers</title>
+
+<!--
+  Runnable version of bpe_unigram_tutorial.ipynb (in this folder).
+
+  The page reads the notebook when it loads, so the notebook is the only source of the content:
+  edit the .ipynb (e.g. in Jupyter or Colab), commit it, and this page shows the new version.
+  Python runs in the visitor's browser via Pyodide (WebAssembly) in a background worker.
+
+  The page must be served over http(s). To preview locally, run
+  `python3 -m http.server --directory docs` and open http://localhost:8000/bpe-unigram/
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/lib/codemirror.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.css">
+
+<style>
+  /* Same look as the other pages of tokenization-tutorial.github.io */
+  :root {
+    --bg: #fff;
+    --ink: #212529;
+    --muted: #717579;
+    --line: #e5e7e9;
+    --blue: #315cb0;
+    --blue-light: #f3f6fa;
+    --code-bg: #f6f7f9;
+    --burgundy: #9b4141;
+    --teal: #007f94;
+    --serif: "Playfair Display", Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --page: 64rem;      /* width of the content column, including padding */
+    --gutter: 3.25rem;  /* column for the run buttons */
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.7 var(--sans);
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+  }
+  a { color: var(--blue); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+
+  /* Site navigation (as on the playground and renderer pages) */
+  .top, .toolbar-inner, main {
+    max-width: var(--page);
+    margin: 0 auto;
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+  .top-wrap { border-bottom: 1px solid var(--line); }
+  .top {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding-top: 17px;
+    padding-bottom: 17px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; min-width: 0; }
+  .brand a { font: 400 19px/1.4 var(--serif); color: var(--ink); text-decoration: none; }
+  .brand a:hover { text-decoration: underline; }
+  .brand-divider { color: #c9cdd0; font-size: 17px; font-weight: 300; }
+  .brand-current, .topnote { font-size: 12px; color: var(--muted); }
+  .topnote { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .topnote a { color: var(--muted); text-decoration: none; }
+  .topnote a:hover { color: var(--ink); text-decoration: underline; }
+
+  /* Run controls, kept visible while scrolling */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.96);
+    border-bottom: 1px solid var(--line);
+  }
+  .toolbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.25rem;
+  }
+  #status { color: var(--muted); font-size: 13px; padding-left: calc(var(--gutter) + 0.75rem); }
+  #status.error { color: var(--burgundy); }
+  .toolbar-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+  button {
+    font: 500 13px/1.4 var(--sans);
+    border-radius: 6px;
+    padding: 0.4rem 0.9rem;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+  }
+  button:hover { border-color: var(--ink); }
+  button.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+  button.primary:hover { background: #284d96; }
+  button:disabled { opacity: 0.45; cursor: default; }
+
+  /* Cells: a narrow gutter for run buttons and execution counts, then the content */
+  main { padding-top: 2.25rem; padding-bottom: 6rem; }
+  .cell {
+    display: grid;
+    grid-template-columns: var(--gutter) minmax(0, 1fr);
+    column-gap: 0.75rem;
+  }
+  .gutter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    padding-top: 0.45rem;
+  }
+  .run-cell {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+  }
+  .run-cell:hover { border-color: var(--blue); color: var(--blue); }
+  .run-cell svg { width: 0.7rem; height: 0.7rem; fill: currentColor; }
+  .count { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .cell[data-state="running"] .count,
+  .cell[data-state="queued"] .count { color: var(--blue); }
+  .cell[data-state="error"] .count { color: var(--burgundy); }
+
+  /* Prose */
+  .markdown { max-width: 44rem; }
+  .markdown h1 {
+    font: 400 clamp(29px, 3.4vw, 41px)/1.2 var(--serif);
+    letter-spacing: -0.025em;
+    margin: 0 0 1rem;
+  }
+  .markdown h2 {
+    font: 400 28px/1.3 var(--serif);
+    margin: 2.75rem 0 0.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+  }
+  .markdown h3 { font: 400 21px/1.35 var(--serif); margin: 2rem 0 0.5rem; }
+  .markdown p, .markdown ul, .markdown ol { margin: 0 0 0.9rem; }
+  .markdown li { margin-bottom: 0.25rem; }
+  .markdown strong { font-weight: 600; }
+  .markdown code {
+    font-family: var(--mono);
+    font-size: 0.86em;
+    background: var(--code-bg);
+    padding: 0.1em 0.3em;
+    border-radius: 4px;
+  }
+  .note { color: var(--muted); font-size: 14px; }
+
+  /* Code and output */
+  .code-cell { margin: 0.75rem 0 1rem; }
+  .editor {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .cell[data-state="running"] .editor { border-color: var(--blue); }
+  .editor textarea {
+    display: block;
+    width: 100%;
+    border: 0;
+    resize: vertical;
+    padding: 0.6rem 0.75rem;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.55;
+    tab-size: 4;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .output {
+    margin: 0;
+    padding: 0.5rem 0.75rem 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--ink);
+  }
+  .output:empty { display: none; }
+  .output.saved { color: #5f6468; }
+  .output .ws { color: var(--blue); }
+  .output .stderr { color: var(--burgundy); }
+  .output .traceback {
+    display: block;
+    color: var(--burgundy);
+    background: #faf1f1;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    margin: 0.25rem 0 0;
+  }
+
+  /* CodeMirror, themed with the page colors */
+  .CodeMirror {
+    height: auto;
+    background: transparent;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.55;
+    padding: 0.35rem 0.25rem;
+  }
+  .CodeMirror-selected, .CodeMirror-focused .CodeMirror-selected { background: #dbe4f4; }
+  .CodeMirror-matchingbracket { color: inherit !important; text-decoration: underline; }
+  .cm-s-default .cm-keyword { color: var(--blue); }
+  .cm-s-default .cm-def { color: var(--ink); font-weight: 600; }
+  .cm-s-default .cm-string, .cm-s-default .cm-string-2 { color: var(--teal); }
+  .cm-s-default .cm-comment { color: #868b90; font-style: italic; }
+  .cm-s-default .cm-number { color: var(--burgundy); }
+  .cm-s-default .cm-builtin { color: #6a4c93; }
+  .cm-s-default .cm-variable, .cm-s-default .cm-variable-2,
+  .cm-s-default .cm-property, .cm-s-default .cm-operator,
+  .cm-s-default .cm-meta, .cm-s-default .cm-atom { color: inherit; }
+
+  @media (max-width: 640px) {
+    .top, .toolbar-inner, main { padding-left: 1.25rem; padding-right: 1.25rem; }
+    .toolbar-inner { flex-wrap: wrap; padding-top: 0.4rem; padding-bottom: 0.4rem; }
+    #status { padding-left: 0; }
+    .cell { grid-template-columns: minmax(0, 1fr); }
+    .gutter { flex-direction: row; padding-top: 0; }
+    .markdown-cell .gutter { display: none; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    button { transition: border-color 0.15s, color 0.15s, background-color 0.15s; }
+  }
+</style>
+</head>
+
+<body>
+<div class="top-wrap">
+  <header class="top">
+    <div class="brand">
+      <a href="../tutorial/">Tokenization in Large Language Models</a>
+      <span class="brand-divider" aria-hidden="true">/</span>
+      <span class="brand-current">Training BPE and Unigram</span>
+    </div>
+    <div class="topnote">
+      <a href="https://colab.research.google.com/github/tokenization-tutorial/tokenization-tutorial.github.io/blob/main/docs/bpe-unigram/bpe_unigram_tutorial.ipynb" target="_blank" rel="noopener noreferrer">Open in Colab ↗</a>
+      <a href="bpe_unigram_tutorial.ipynb" download>Download notebook</a>
+      <span>EMNLP 2026</span>
+    </div>
+  </header>
+</div>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <span id="status" role="status" aria-live="polite">Loading the notebook…</span>
+    <span class="toolbar-actions">
+      <button id="run-all" class="primary">Run all</button>
+      <button id="restart" title="Stops running code and clears all variables">Restart Python</button>
+    </span>
+  </div>
+</div>
+
+<main id="notebook"></main>
+
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/lib/codemirror.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.21/mode/python/python.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@18.1.0/lib/marked.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.js"></script>
+
+<!-- Code for the background worker that runs Python. -->
+<script id="worker-source" type="text/plain">
+let pyodide = null;
+let currentId = null;
+
+// Pyodide has no network sockets, so urllib.request.urlopen does not work out of the box.
+// This replacement fetches the URL with a (synchronous) browser request instead. It is
+// enough for downloading a text corpus; the server must allow cross-origin requests.
+const URLLIB_SHIM = `
+import io
+import urllib.request
+from pyodide.http import open_url
+
+def _browser_urlopen(url, *args, **kwargs):
+    url = getattr(url, "full_url", url)
+    return io.BytesIO(open_url(url).read().encode("utf-8"))
+
+urllib.request.urlopen = _browser_urlopen
+`;
+
+function cleanTraceback(message) {
+  // Drop the frames that belong to Pyodide itself and keep those of the user's code.
+  const lines = message.split("\n");
+  const first = lines.findIndex((line) => line.includes('File "<exec>"'));
+  return first > 0 ? ["Traceback (most recent call last):", ...lines.slice(first)].join("\n") : message;
+}
+
+function send(name, text) {
+  self.postMessage({ type: "stream", id: currentId, name, text: text + "\n" });
+}
+
+self.onmessage = async (event) => {
+  const message = event.data;
+
+  if (message.type === "init") {
+    try {
+      importScripts(message.indexURL + "pyodide.js");
+      pyodide = await loadPyodide({ indexURL: message.indexURL });
+      pyodide.setStdout({ batched: (text) => send("stdout", text) });
+      pyodide.setStderr({ batched: (text) => send("stderr", text) });
+      pyodide.runPython(URLLIB_SHIM);
+      self.postMessage({ type: "ready", version: pyodide.version });
+    } catch (err) {
+      self.postMessage({ type: "fatal", message: String((err && err.message) || err) });
+    }
+    return;
+  }
+
+  if (message.type === "run") {
+    currentId = message.id;
+    let reply = { type: "done", id: message.id };
+    try {
+      const result = await pyodide.runPythonAsync(message.code);
+      if (result !== undefined) {
+        // Like Jupyter, show the value of a final expression.
+        const builtins = pyodide.pyimport("builtins");
+        reply.repr = builtins.repr(result);
+        builtins.destroy();
+        if (result && typeof result.destroy === "function") result.destroy();
+      }
+    } catch (err) {
+      reply.error = cleanTraceback(String((err && err.message) || err));
+    }
+    try { pyodide.runPython("import sys; sys.stdout.flush(); sys.stderr.flush()"); } catch (err) {}
+    self.postMessage(reply);
+  }
+};
+</script>
+
+<script>
+// ---------------------------------------------------------------------------
+// Configuration
+const NOTEBOOK_URL = "bpe_unigram_tutorial.ipynb";
+const PYODIDE_URL = "https://cdn.jsdelivr.net/npm/pyodide@0.29.5/";
+
+// ---------------------------------------------------------------------------
+const notebookEl = document.getElementById("notebook");
+const statusEl = document.getElementById("status");
+const runAllButton = document.getElementById("run-all");
+const restartButton = document.getElementById("restart");
+
+const codeCells = [];   // { el, output, countEl, getCode, focus, state, previousCount }
+let worker = null;
+let pythonReady = false;
+let queue = [];
+let current = null;     // { cell, id, start }
+let executionCount = 0;
+let nextId = 0;
+let clock = null;
+
+function setStatus(text, isError = false) {
+  statusEl.textContent = text;
+  statusEl.classList.toggle("error", isError);
+}
+
+function escapeHtml(text) {
+  return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+}
+
+function joinSource(source) {
+  return Array.isArray(source) ? source.join("") : source || "";
+}
+
+// ---------------------------------------------------------------------------
+// Rendering the notebook
+
+function renderMarkdown(source) {
+  // Take formulas out before running the Markdown parser, so that e.g. underscores
+  // in $t_1$ are not read as emphasis; then typeset them with KaTeX.
+  const formulas = [];
+  const protectedSource = source.replace(/\$\$([\s\S]+?)\$\$|\$([^$\n]+?)\$/g, (match, display, inline) => {
+    formulas.push({ tex: display !== undefined ? display : inline, display: display !== undefined });
+    return "MATHPLACEHOLDER" + (formulas.length - 1) + "END";
+  });
+  const html = window.marked ? marked.parse(protectedSource) : "<pre>" + escapeHtml(protectedSource) + "</pre>";
+  return html.replace(/MATHPLACEHOLDER(\d+)END/g, (match, i) => {
+    const { tex, display } = formulas[Number(i)];
+    if (window.katex) return katex.renderToString(tex, { displayMode: display, throwOnError: false });
+    return escapeHtml(display ? "$$" + tex + "$$" : "$" + tex + "$");
+  });
+}
+
+function appendText(outputEl, text, className) {
+  // Append output text, highlighting the word-boundary marker ▁.
+  const container = className ? document.createElement("span") : outputEl;
+  if (className) {
+    container.className = className;
+    outputEl.appendChild(container);
+  }
+  text.split("▁").forEach((part, i) => {
+    if (i > 0) {
+      const marker = document.createElement("span");
+      marker.className = "ws";
+      marker.textContent = "▁";
+      container.appendChild(marker);
+    }
+    if (part) container.appendChild(document.createTextNode(part));
+  });
+}
+
+function makeGutter(withButton) {
+  const gutter = document.createElement("div");
+  gutter.className = "gutter";
+  if (!withButton) return { gutter };
+  const button = document.createElement("button");
+  button.className = "run-cell";
+  button.setAttribute("aria-label", "Run cell");
+  button.title = "Run cell (Shift+Enter)";
+  button.innerHTML = '<svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0.5 9.5 5 1 9.5z"/></svg>';
+  const countEl = document.createElement("span");
+  countEl.className = "count";
+  countEl.textContent = "[ ]";
+  gutter.append(button, countEl);
+  return { gutter, button, countEl };
+}
+
+function addMarkdownCell(source) {
+  const el = document.createElement("section");
+  el.className = "cell markdown-cell";
+  const { gutter } = makeGutter(false);
+  const body = document.createElement("div");
+  body.className = "markdown";
+  body.innerHTML = renderMarkdown(source);
+  el.append(gutter, body);
+  notebookEl.appendChild(el);
+  return el;
+}
+
+function addCodeCell(source, savedOutputs) {
+  const el = document.createElement("section");
+  el.className = "cell code-cell";
+  el.dataset.state = "idle";
+  const { gutter, button, countEl } = makeGutter(true);
+  const body = document.createElement("div");
+  const editorEl = document.createElement("div");
+  editorEl.className = "editor";
+  const textarea = document.createElement("textarea");
+  textarea.value = source;
+  textarea.spellcheck = false;
+  textarea.setAttribute("aria-label", "Python code");
+  textarea.rows = Math.max(1, source.split("\n").length);
+  editorEl.appendChild(textarea);
+  const output = document.createElement("pre");
+  output.className = "output";
+  body.append(editorEl, output);
+  el.append(gutter, body);
+  notebookEl.appendChild(el);
+
+  const cell = { el, output, countEl, state: "idle", previousCount: "[ ]" };
+  const runAndAdvance = () => {
+    runCell(cell);
+    const next = codeCells[codeCells.indexOf(cell) + 1];
+    if (next) next.focus();
+  };
+
+  if (window.CodeMirror) {
+    const editor = CodeMirror.fromTextArea(textarea, {
+      mode: { name: "python", version: 3 },
+      indentUnit: 4,
+      viewportMargin: Infinity,
+      matchBrackets: false,
+      extraKeys: {
+        "Shift-Enter": runAndAdvance,
+        Tab: (cm) => (cm.somethingSelected() ? cm.indentSelection("add") : cm.replaceSelection("    ")),
+      },
+    });
+    cell.getCode = () => editor.getValue();
+    cell.focus = () => editor.focus();
+  } else {
+    textarea.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && event.shiftKey) {
+        event.preventDefault();
+        runAndAdvance();
+      }
+    });
+    cell.getCode = () => textarea.value;
+    cell.focus = () => textarea.focus();
+  }
+
+  // Show the outputs stored in the notebook until the cell is run.
+  for (const out of savedOutputs || []) {
+    if (out.output_type === "stream") appendText(output, joinSource(out.text));
+    if (out.output_type === "execute_result" && out.data && out.data["text/plain"]) {
+      appendText(output, joinSource(out.data["text/plain"]) + "\n");
+    }
+  }
+  output.classList.add("saved");
+
+  button.addEventListener("click", () => runCell(cell));
+  codeCells.push(cell);
+}
+
+async function loadNotebook() {
+  let notebook;
+  try {
+    const response = await fetch(NOTEBOOK_URL);
+    if (!response.ok) throw new Error(response.status + " " + response.statusText);
+    notebook = await response.json();
+  } catch (err) {
+    setStatus("Could not load " + NOTEBOOK_URL + " (" + err.message + "). The page must be served over http(s), next to the notebook.", true);
+    runAllButton.disabled = true;
+    restartButton.disabled = true;
+    return false;
+  }
+  notebook.cells.forEach((nbCell, i) => {
+    const source = joinSource(nbCell.source);
+    if (nbCell.cell_type === "markdown") {
+      addMarkdownCell(source);
+    } else if (nbCell.cell_type === "code") {
+      addCodeCell(source, nbCell.outputs);
+    }
+    if (i === 0) {
+      const note = addMarkdownCell(
+        "This page runs the code in your browser, with Python compiled to WebAssembly (Pyodide). " +
+        "That is slower than a local Python installation, so expect the training steps to take a few minutes. " +
+        "Cells share their variables: run them from top to bottom, or use *Run all*. " +
+        "The outputs shown are from a previous run and are replaced when a cell is run. Code cells can be edited."
+      );
+      note.querySelector(".markdown").classList.add("note");
+    }
+  });
+  const title = notebookEl.querySelector("h1");
+  if (title) document.title = title.textContent;
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Running code
+
+function startWorker() {
+  const source = document.getElementById("worker-source").textContent;
+  worker = new Worker(URL.createObjectURL(new Blob([source], { type: "text/javascript" })));
+  pythonReady = false;
+  worker.onmessage = onWorkerMessage;
+  worker.onerror = (event) => setStatus("Python could not be started: " + event.message, true);
+  worker.postMessage({ type: "init", indexURL: PYODIDE_URL });
+  updateStatus();
+}
+
+function setCellState(cell, state) {
+  cell.state = state;
+  cell.el.dataset.state = state;
+}
+
+function runCell(cell) {
+  if (cell.state === "queued" || cell.state === "running") return;
+  cell.previousCount = cell.countEl.textContent;
+  cell.countEl.textContent = "[*]";
+  setCellState(cell, "queued");
+  queue.push(cell);
+  processQueue();
+}
+
+function processQueue() {
+  if (!pythonReady || current || queue.length === 0) {
+    updateStatus();
+    return;
+  }
+  const cell = queue.shift();
+  current = { cell, id: ++nextId, start: Date.now() };
+  cell.output.textContent = "";
+  cell.output.classList.remove("saved");
+  setCellState(cell, "running");
+  worker.postMessage({ type: "run", id: current.id, code: cell.getCode() });
+  clearInterval(clock);
+  clock = setInterval(updateStatus, 1000);
+  updateStatus();
+}
+
+function cancelQueue() {
+  for (const cell of queue) {
+    cell.countEl.textContent = cell.previousCount;
+    setCellState(cell, "idle");
+  }
+  queue = [];
+}
+
+function onWorkerMessage(event) {
+  const message = event.data;
+  if (message.type === "ready") {
+    pythonReady = true;
+    processQueue();
+  } else if (message.type === "fatal") {
+    setStatus("Python could not be loaded (" + message.message + "). Check the internet connection and reload the page.", true);
+  } else if (message.type === "stream") {
+    if (current && message.id === current.id) {
+      appendText(current.cell.output, message.text, message.name === "stderr" ? "stderr" : null);
+    }
+  } else if (message.type === "done") {
+    if (!current || message.id !== current.id) return;
+    const cell = current.cell;
+    current = null;
+    clearInterval(clock);
+    if (message.error) {
+      appendText(cell.output, message.error, "traceback");
+      cell.countEl.textContent = "[!]";
+      setCellState(cell, "error");
+      cancelQueue();  // like Jupyter, stop "Run all" at the first error
+    } else {
+      if (message.repr !== undefined) appendText(cell.output, message.repr + "\n");
+      cell.countEl.textContent = "[" + ++executionCount + "]";
+      setCellState(cell, "done");
+    }
+    processQueue();
+  }
+}
+
+function updateStatus() {
+  if (current) {
+    const seconds = Math.floor((Date.now() - current.start) / 1000);
+    const elapsed = Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
+    const position = codeCells.indexOf(current.cell) + 1;
+    const waiting = queue.length ? `, ${queue.length} more queued` : "";
+    setStatus(`Running code cell ${position} of ${codeCells.length} (${elapsed})${waiting}`);
+  } else if (!pythonReady) {
+    setStatus(queue.length ? "Loading Python… (cells will run once it is ready)" : "Loading Python…");
+  } else {
+    setStatus("Python is ready");
+  }
+}
+
+function restartPython() {
+  if (worker) worker.terminate();
+  clearInterval(clock);
+  if (current) {
+    appendText(current.cell.output, "Stopped: Python was restarted.\n", "stderr");
+    current.cell.countEl.textContent = "[ ]";
+    setCellState(current.cell, "idle");
+    current = null;
+  }
+  cancelQueue();
+  executionCount = 0;
+  startWorker();
+}
+
+runAllButton.addEventListener("click", () => codeCells.forEach(runCell));
+restartButton.addEventListener("click", restartPython);
+
+loadNotebook().then((loaded) => { if (loaded) startWorker(); });
+</script>
+</body>
+</html>
