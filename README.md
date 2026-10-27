@@ -35,6 +35,15 @@ and license, and push to `main`. GitHub Pages publishes the update automatically
 the entire site locally, run `python3 -m http.server --directory docs` and open
 `http://localhost:8000/tutorial/`.
 
+## Tutorial slides
+
+The slide viewer below the abstract reads `docs/tutorial/slides.pdf`. To update the
+deck, replace that PDF and keep its filename. Previous/Next buttons and arrow keys
+move through the slides, and “Open PDF in new tab” opens the current slide in the
+browser's PDF viewer. The preview loads PDF.js from jsDelivr at a pinned version;
+the PDF link also works if the preview is unavailable. Commit the PDF along with
+the page and `docs/tutorial/slides.js` when publishing the viewer.
+
 ## BPE and Unigram notebook
 
 `docs/bpe-unigram/bpe_unigram_tutorial.ipynb` implements BPE and Unigram training in plain

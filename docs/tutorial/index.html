@@ -3,6 +3,7 @@
 
 <head>
 <meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tutorial @ EMNLP 2026</title>
 
 
@@ -82,21 +83,31 @@
     </div>
 
     <div class="row d-flex justify-content-center mt-5 pt-3 mb-5">
-        <div class="col-8">
+        <div class="col-12 col-md-8">
             <h4 class="text-center mb-4">Abstract</h4>
             <p class="text-muted abstract-info">
                 Tokenization defines how data is represented as input and output for machine learning systems, including large language models (LLMs). While tokenization has long been a foundational component of NLP systems, it has historically remained a niche research area, often considered solved. The recent proliferation of LLMs has changed this: as these models are deployed across diverse languages and domains, tokenization-related issues have become increasingly apparent---from cross-lingual representation disparities to efficiency bottlenecks. This tutorial will provide a comprehensive overview of tokenization methods in text, starting from classical word-based and morphological approaches, to the current standard of statistical subword tokenizers, and emerging methods on end-to-end learnable tokenizers. We will also discuss the implications of tokenization choices on model performance, fairness, and efficiency, and present best practices for evaluating and designing tokenizers in multilingual and domain-specific settings.
             </p>
         </div>
     </div>
-    <!-- <div class="d-flex justify-content-center">
-        
-    </div> -->
-
-    <!-- <div class="row d-flex justify-content-center mt-5 pt-3 mb-5">
-        <h4 class="text-center mb-4">Tutorial Slides</h4>
-        <iframe src="https://docs.google.com/presentation/d/e/2PACX-1vT5JrVzkx9_QbpfsZwrYDqLI50b1DjAgckRA41kaS4dJb2BKqACoS2QQ14Acyx6Hhxj2fnyRh6AWzOv/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
-    </div> -->
+    <section class="tutorial-slides mb-5" aria-labelledby="slides-heading">
+        <h4 id="slides-heading" class="text-center mb-4">Tutorial Slides</h4>
+        <div class="slide-viewer">
+            <div id="slide-stage" class="slide-stage" tabindex="0" role="group" aria-label="Slide viewer. Use the left and right arrow keys to change slides." aria-busy="true">
+                <canvas id="slide-canvas" role="img" aria-label="Tutorial slide" hidden></canvas>
+                <p id="slide-status" class="slide-status" role="status">Loading slide preview&hellip;</p>
+            </div>
+            <div class="slide-toolbar">
+                <div class="slide-navigation" role="group" aria-label="Slide navigation">
+                    <button id="slide-previous" class="btn btn-outline-dark btn-sm" type="button" aria-controls="slide-canvas" disabled>&larr; Previous</button>
+                    <span id="slide-counter" class="slide-counter" aria-live="polite" aria-atomic="true">Slide &mdash;</span>
+                    <button id="slide-next" class="btn btn-outline-dark btn-sm" type="button" aria-controls="slide-canvas" disabled>Next &rarr;</button>
+                </div>
+                <a id="slides-open" href="slides.pdf" target="_blank" rel="noopener noreferrer">Open PDF in new tab &nearr;</a>
+            </div>
+        </div>
+        <noscript><p class="text-muted mt-3">Enable JavaScript for the slide preview, or <a href="slides.pdf" target="_blank" rel="noopener noreferrer">open the PDF in a new tab</a>.</p></noscript>
+    </section>
 </div>
 </body>
 
@@ -121,6 +132,81 @@
 
     .abstract-info {
         text-align: justify;
+    }
+
+    .tutorial-slides {
+        max-width: 1000px;
+        margin-inline: auto;
+    }
+
+    .slide-viewer {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .slide-stage {
+        position: relative;
+        aspect-ratio: 16 / 9;
+        background: #f8f9fa;
+    }
+
+    .slide-stage:focus-visible {
+        outline: 2px solid #212529;
+        outline-offset: -2px;
+    }
+
+    #slide-canvas {
+        width: 100%;
+        height: auto;
+        vertical-align: middle;
+    }
+
+    .slide-status {
+        position: absolute;
+        inset: 0;
+        margin: 0;
+        padding: 24px;
+        align-content: center;
+        text-align: center;
+        color: #6c757d;
+    }
+
+    .slide-toolbar,
+    .slide-navigation {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .slide-toolbar {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-top: 1px solid #dee2e6;
+        font-size: 0.9rem;
+    }
+
+    .slide-toolbar a {
+        color: #495057;
+        text-underline-offset: 3px;
+    }
+
+    .slide-counter {
+        min-width: 108px;
+        text-align: center;
+        color: #6c757d;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .slide-navigation > * {
+        white-space: nowrap;
+    }
+
+    @media (max-width: 575px) {
+        .slide-toolbar { justify-content: center; padding: 12px; }
+        .slide-navigation { gap: 8px; }
+        .slide-counter { min-width: 0; }
     }
 
     .presenters {
@@ -177,3 +263,4 @@
 </style> -->
 <!-- JavaScript Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+<script src="slides.js" defer></script>
