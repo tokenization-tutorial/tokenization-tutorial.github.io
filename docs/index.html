@@ -18,7 +18,7 @@
   .home-venue { margin: 0 0 20px; color: #717579; font-size: 13px; }
   h1 { margin: 0; font-size: clamp(2.3rem, 6vw, 3.6rem); font-weight: 400; line-height: 1.2; }
   .home-description { max-width: 540px; margin: 24px auto 0; color: #626b73; }
-  .home-resources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin-top: 52px; }
+  .home-resources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; margin-top: 52px; }
   .home-resource { display: block; border-top: 1px solid #dfe2e5; padding: 22px 0; color: inherit; text-decoration: none; }
   .home-resource:hover { border-color: #212529; }
   .home-resource:focus-visible { outline: 2px solid #315cb0; outline-offset: 6px; }
@@ -42,6 +42,10 @@
     <a class="home-resource" href="playground/">
       <span class="resource-title">Interactive playground <span aria-hidden="true">&rarr;</span></span>
       <span class="resource-description">Explore tokenizers, compare examples, and try your own text.</span>
+    </a>
+    <a class="home-resource" href="renderer/">
+      <span class="resource-title">Visual patch renderer <span aria-hidden="true">&rarr;</span></span>
+      <span class="resource-description">Render text onto a 2D pixel strip and slice sliding-window image patches.</span>
     </a>
   </nav>
 </main>
